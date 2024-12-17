@@ -43,7 +43,10 @@ def index_to_position(index: Index, strides: Strides) -> int:
     Returns:
         Position in storage
     """
-    return sum(i * s for i, s in zip(index, strides))
+    pos = 0
+    for i, s in zip(index, strides):
+        pos += i * s
+    return pos
 
 
 def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
@@ -59,8 +62,16 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         out_index : return index corresponding to position.
 
     """
-    for i, dim in enumerate(strides_from_shape(shape)):
-        idx, ordinal = divmod(ordinal, dim)
+    strides = np.empty_like(shape, dtype=np.int64)
+    strides[-1] = 1
+    offset = 1
+    for i, s in enumerate(shape[-1:0:-1]):
+        offset *= s
+        strides[-i - 2] = offset
+
+    rem = ordinal
+    for i, dim in enumerate(strides):
+        idx, rem = divmod(rem, dim)
         out_index[i] = idx
 
 

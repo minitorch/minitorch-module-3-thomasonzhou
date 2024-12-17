@@ -273,7 +273,7 @@ class MatMul(Function):
         def transpose(a: Tensor) -> Tensor:
             order = list(range(a.dims))
             order[-2], order[-1] = order[-1], order[-2]
-            return a._new(a._tensor.permute(order))
+            return a._new(a._tensor.permute(*order))
 
         return (
             grad_output.f.matrix_multiply(grad_output, transpose(t2)),

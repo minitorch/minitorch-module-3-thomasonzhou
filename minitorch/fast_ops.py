@@ -137,18 +137,24 @@ class FastOps(TensorOps):
 
 
 # Implementations
+@_njit(parallel=True)
 def _stride_aligned(
     shape_1: Shape, 
     strides_1: Strides, 
     shape_2: Shape, 
     strides_2: Strides
-
     ) -> bool:
     """Check if the shapes and strides allow for a one to one mapping of input to output position"""
 
-    return len(shape_1) == len(shape_2) \
-        and all(st1 == st2 for st1, st2 in zip(strides_1, strides_2)) \
-            and all(sh1 == sh2 for sh1, sh2 in zip(shape_1, shape_2))
+    if len(shape_1) != len(shape_2):
+        return False
+    for st1, st2 in zip(strides_1, strides_2):
+        if st1 != st2:
+            return False
+    for sh1, sh2 in zip(shape_1, shape_2):
+        if sh1 != sh2:
+            return False
+    return True
 
 
 def tensor_map(
@@ -345,9 +351,15 @@ def _tensor_matrix_multiply(
     a_batch_stride = a_strides[0] if a_shape[0] > 1 else 0
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
 
-    # TODO: Implement for Task 3.2.
-    raise NotImplementedError("Need to implement for Task 3.2")
+    for batch in prange(out_shape[0]):
+        for i in prange(a_shape[-2]):
+            for j in prange(a_shape[-1]): # common dim
+                for k in prange(b_shape[-1]):
 
+                    out_pos = batch * out_strides[0] + i * out_strides[1] + k * out_strides[2]
+                    a_pos = batch * a_batch_stride + i * a_strides[1] + j * a_strides[2]
+                    b_pos = batch * b_batch_stride + j * b_strides[1] + k * b_strides[2]
+                    out[out_pos] += a_storage[a_pos] * b_storage[b_pos]
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)
 assert tensor_matrix_multiply is not None
