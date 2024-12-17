@@ -353,13 +353,14 @@ def _tensor_matrix_multiply(
 
     for batch in prange(out_shape[0]):
         for i in prange(a_shape[-2]):
-            for j in prange(a_shape[-1]): # common dim
-                for k in prange(b_shape[-1]):
-
-                    out_pos = batch * out_strides[0] + i * out_strides[1] + k * out_strides[2]
+            for k in prange(b_shape[-1]):
+                out_pos = batch * out_strides[0] + i * out_strides[1] + k * out_strides[2]
+                total = 0
+                for j in prange(a_shape[-1]): # common dim
                     a_pos = batch * a_batch_stride + i * a_strides[1] + j * a_strides[2]
                     b_pos = batch * b_batch_stride + j * b_strides[1] + k * b_strides[2]
-                    out[out_pos] += a_storage[a_pos] * b_storage[b_pos]
+                    total += a_storage[a_pos] * b_storage[b_pos]
+                out[out_pos] = total
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)
 assert tensor_matrix_multiply is not None
