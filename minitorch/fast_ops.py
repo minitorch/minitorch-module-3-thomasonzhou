@@ -137,7 +137,7 @@ class FastOps(TensorOps):
 
 
 # Implementations
-@_njit(parallel=True)
+@_njit
 def _stride_aligned(
     shape_1: Shape, 
     strides_1: Strides, 
