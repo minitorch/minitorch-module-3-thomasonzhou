@@ -163,7 +163,6 @@ class Tensor:
         return Mul.apply(self._ensure_tensor(b), Inv.apply(self))
 
     def __matmul__(self, b: Tensor) -> Tensor:
-        "Not used until Module 3"
         return MatMul.apply(self, b)
 
     def __lt__(self, b: TensorLike) -> Tensor:
@@ -179,10 +178,10 @@ class Tensor:
         return Neg.apply(self)
 
     def __radd__(self, b: TensorLike) -> Tensor:
-        return self + b
+        return Add.apply(self, self._ensure_tensor(b))
 
     def __rmul__(self, b: TensorLike) -> Tensor:
-        return self * b
+        return Mul.apply(self, self._ensure_tensor(b))
 
     def __hash__(self) -> int:
         return self.unique_id
