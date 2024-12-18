@@ -29,8 +29,8 @@ FakeCUDAKernel = Any
 Fn = TypeVar("Fn")
 
 
-def device_jit(fn: Fn, **kwargs) -> Fn:
-    return _jit(device=True, **kwargs)(fn)  # type: ignore
+def device_jit(fn: Fn) -> Fn:
+    return _jit(device=True)(fn)  # type: ignore
 
 
 def jit(fn, **kwargs) -> FakeCUDAKernel:
