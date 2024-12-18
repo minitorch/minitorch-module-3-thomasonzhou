@@ -104,7 +104,7 @@ def inv(x: float) -> float:
 
 def sigmoid(x: float) -> float:
     """Compute the sigmoid of x."""
-    return 1/(1 + math.exp(-x))
+    return 1.0/(1.0 + math.exp(-x))
 
 
 def log_back(x: float, deriv: float) -> float:
