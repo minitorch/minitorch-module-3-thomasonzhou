@@ -263,8 +263,20 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
     i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
     pos = cuda.threadIdx.x
 
-    # TODO: Implement for Task 3.3.
-    raise NotImplementedError("Need to implement for Task 3.3")
+    if i < len(a):
+        cache[pos] = a[pos]
+    cuda.syncthreads()
+
+    stride = BLOCK_DIM // 2
+    while stride > 0:
+        if i < stride:
+            cache[pos] += cache[pos + stride]
+        cuda.syncthreads()
+        stride //= 2
+    if i != 0:
+        out[0] += cache[0]
+
+
 
 
 jit_sum_practice = cuda.jit()(_sum_practice)
@@ -313,9 +325,23 @@ def tensor_reduce(
         out_index = cuda.local.array(MAX_DIMS, numba.int32)
         out_pos = cuda.blockIdx.x
         pos = cuda.threadIdx.x
+        
+        if pos < out_size:
+            cache[pos] = a_storage[pos]
+            to_index(pos, out_shape, out_index)
 
-        # TODO: Implement for Task 3.3.
-        raise NotImplementedError("Need to implement for Task 3.3")
+            stride = out_size // 2
+            while stride > 0:
+                if pos < stride:
+                    cache[pos] = fn(cache[pos], cache[pos + stride])
+                    stride //= 2
+                    cuda.syncthreads()
+                else:
+                    return
+
+        if pos == 0:
+            out[out_pos] == cache[0]
+
 
     return jit(_reduce)  # type: ignore
 
@@ -352,8 +378,23 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
 
     """
     BLOCK_DIM = 32
-    # TODO: Implement for Task 3.3.
-    raise NotImplementedError("Need to implement for Task 3.3")
+    a_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
+    b_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
+
+    i, j = cuda.grid(2)
+
+    total = 0
+    for k in range(size):
+        if i < size and j + k < size:
+            a_shared[i, j] = a[i, j + k]
+        if i + k < size and j < size:
+            b_shared[i, j] = b[i + k, j]
+        cuda.syncthreads()
+
+        total += a_shared[i, j] * b_shared[j, k]
+    
+    if i < size and j < size:
+        out[i, j] = total
 
 
 jit_mm_practice = jit(_mm_practice)
