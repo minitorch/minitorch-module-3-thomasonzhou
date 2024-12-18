@@ -170,11 +170,11 @@ def tensor_map(
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        out_index = cuda.local.array(MAX_DIMS, numba.int32)
-        in_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
         
-        if i < out_size:
+        if i < out.size:
+            out_index = cuda.local.array(MAX_DIMS, numba.int32)
+            in_index = cuda.local.array(MAX_DIMS, numba.int32)
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, in_shape, in_index)
             out_pos = index_to_position(out_index, out_strides)
@@ -217,12 +217,13 @@ def tensor_zip(
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        out_index = cuda.local.array(MAX_DIMS, numba.int32)
-        a_index = cuda.local.array(MAX_DIMS, numba.int32)
-        b_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
 
-        if i < out_size:
+        if i < out.size:
+            out_index = cuda.local.array(MAX_DIMS, numba.int32)
+            a_index = cuda.local.array(MAX_DIMS, numba.int32)
+            b_index = cuda.local.array(MAX_DIMS, numba.int32)
+
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, a_shape, a_index)
             broadcast_index(out_index, out_shape, b_shape, b_index)
@@ -327,7 +328,7 @@ def tensor_reduce(
         out_pos = cuda.blockIdx.x
         pos = cuda.threadIdx.x
         
-        if pos < out_size:
+        if pos < out.size:
             cache[pos] = a_storage[pos]
             cuda.syncthreads()
             to_index(pos, out_shape, out_index)
