@@ -191,8 +191,8 @@ def tensor_map(
             for i in prange(len(out)):
                 out[i] = fn(in_storage[i])
         else:
-            out_idx = np.empty_like(out_shape, dtype=np.int64)
-            in_idx = np.empty_like(in_shape, dtype=np.int64)
+            out_idx = np.empty_like(out_shape, np.int64)
+            in_idx = np.empty_like(in_shape, np.int64)
             for i in prange(len(out)):
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, in_shape, in_idx)
@@ -243,9 +243,9 @@ def tensor_zip(
             for i in prange(len(out)):
                 out[i] = fn(a_storage[i], b_storage[i])
         else:
-            out_idx = np.empty_like(out_shape, dtype=np.int64)
-            a_idx = np.empty_like(a_shape, dtype=np.int64)
-            b_idx = np.empty_like(b_shape, dtype=np.int64)
+            out_idx = np.empty_like(out_shape, np.int64)
+            a_idx = np.empty_like(a_shape, np.int64)
+            b_idx = np.empty_like(b_shape, np.int64)
             for i in prange(len(out)):
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, a_shape, a_idx)
@@ -290,8 +290,8 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        a_idx = np.empty_like(a_shape, dtype=np.int64)
-        out_idx = np.empty_like(out_shape, dtype=np.int64)
+        a_idx = np.empty_like(a_shape, np.int64)
+        out_idx = np.empty_like(out_shape, np.int64)
         for i in prange(len(a_storage)):
             to_index(i, a_shape, a_idx)
             broadcast_index(a_idx, a_shape, out_shape, out_idx)
