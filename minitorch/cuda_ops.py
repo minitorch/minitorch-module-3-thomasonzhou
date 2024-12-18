@@ -174,7 +174,7 @@ def tensor_map(
         in_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
         
-        if i < len(out):
+        if i < out_size:
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, in_shape, in_index)
             out_pos = index_to_position(out_index, out_strides)
@@ -222,7 +222,7 @@ def tensor_zip(
         b_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
 
-        if i < len(out):
+        if i < out_size:
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, a_shape, a_index)
             broadcast_index(out_index, out_shape, b_shape, b_index)
@@ -263,8 +263,8 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
     i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
     pos = cuda.threadIdx.x
 
-    if i < len(a):
-        cache[pos] = a[pos]
+    if i < size:
+        cache[pos] = a[i]
     cuda.syncthreads()
 
     stride = BLOCK_DIM // 2
@@ -274,10 +274,7 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
         cuda.syncthreads()
         stride //= 2
     if i != 0:
-        out[0] += cache[0]
-
-
-
+        out[cuda.blockIdx.x] = cache[0]
 
 jit_sum_practice = cuda.jit()(_sum_practice)
 
@@ -328,6 +325,7 @@ def tensor_reduce(
         
         if pos < out_size:
             cache[pos] = a_storage[pos]
+            cuda.syncthreads()
             to_index(pos, out_shape, out_index)
 
             stride = out_size // 2
