@@ -50,7 +50,7 @@ def add(x: float, y: float) -> float:
 
 def neg(x: float) -> float:
     """Compute the negation of x."""
-    return -x
+    return -1.0 * x
 
 
 def lt(x: float, y: float) -> float:
