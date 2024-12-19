@@ -403,8 +403,8 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
         a_shared[pi, pj] = a[i * size + j]
         b_shared[pi, pj] = b[i * size + j]
     else:
-        a_shared[i, j] = 0
-        b_shared[i, j] = 0
+        a_shared[pi, pj] = 0
+        b_shared[pi, pj] = 0
     cuda.syncthreads()
 
     if i < size and j < size:
