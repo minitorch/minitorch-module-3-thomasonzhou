@@ -359,7 +359,7 @@ def tensor_reduce(
 
 
 def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
-    """This is a practice square MM kernel to prepare for matmul.
+    """Practice square MM kernel to prepare for matmul.
 
     Given a storage `out` and two storage `a` and `b`. Where we know
     both are shape [size, size] with strides [size, 1].
@@ -407,7 +407,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     if i < size and j < size:
         total = 0
         for k in range(size):
-            total += a_shared[i][k] * b_shared[k][j]
+            total += a_shared[i, k] * b_shared[k, j]
         out[i, j] = total
 
 
