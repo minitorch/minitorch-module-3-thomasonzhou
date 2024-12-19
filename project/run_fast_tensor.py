@@ -44,7 +44,7 @@ class Linear(minitorch.Module):
 
     def forward(self, x):
         batch_size, _ = x.shape
-        return x.view(*x.shape, 1) * self.weights.value.view(1, *self.weights.value.shape).sum(1).view(batch_size, self.out_size) + self.bias.value.view(1, self.out_size)
+        return (x.view(*x.shape, 1) * self.weights.value.view(1, *self.weights.value.shape)).sum(1).view(batch_size, self.out_size) + self.bias.value.view(1, self.out_size)
 
 
 class FastTrain:
