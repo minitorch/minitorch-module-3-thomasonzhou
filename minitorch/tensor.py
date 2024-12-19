@@ -178,10 +178,10 @@ class Tensor:
         return Neg.apply(self)
 
     def __radd__(self, b: TensorLike) -> Tensor:
-        return Add.apply(self, self._ensure_tensor(b))
+        return self + b
 
     def __rmul__(self, b: TensorLike) -> Tensor:
-        return Mul.apply(self, self._ensure_tensor(b))
+        return self * b
 
     def __hash__(self) -> int:
         return self.unique_id
