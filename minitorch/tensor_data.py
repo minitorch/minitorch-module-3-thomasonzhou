@@ -122,8 +122,9 @@ def broadcast_index(big_index: Index, big_shape: Shape, shape: Shape, out_index:
         None
 
     """
-    for i in range(-1, -len(out_index) - 1, -1):
-        out_index[i] = big_index[i] if shape[i] != 1 else 0
+    for i in range(len(shape) - 1, -1, -1):
+        offset = len(big_shape) - len(shape) + i
+        out_index[i] = big_index[offset] if shape[i] != 1 else 0
 
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
