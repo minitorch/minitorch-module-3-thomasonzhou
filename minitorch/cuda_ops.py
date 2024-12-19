@@ -489,13 +489,9 @@ def _tensor_matrix_multiply(
         if i < I and pj + k < K:
             a_pos = batch * a_batch_stride + i * a_strides[1] + (pj + k) * a_strides[2]
             a_shared[pi, pj] = a_storage[a_pos]
-        else:
-            a_shared[pi, pj] = 0.0
         if j < J and pi + k < K:
             b_pos = batch * b_batch_stride + (pi + k) * b_strides[1] + j * b_strides[2]
             b_shared[pi, pj] = b_storage[b_pos]
-        else:
-            b_shared[pi, pj] = 0.0
 
         cuda.syncthreads()
 
