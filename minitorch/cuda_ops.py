@@ -477,19 +477,19 @@ def _tensor_matrix_multiply(
     #    b) Copy into shared memory for b matrix
     #    c) Compute the dot produce for position c[i, j]
 
-    out_pos = batch * out_strides[0] + i * out_strides[1] + j * out_strides[2]
     total = 0
     for k in range(0, out_size, BLOCK_DIM):
-        if pi < BLOCK_DIM and pj + k < BLOCK_DIM:
-            a_pos = batch * a_batch_stride + a_shape[1] * pi + a_shape[2] * (pj + k)
+        if i < BLOCK_DIM and pj + k < BLOCK_DIM:
+            a_pos = batch * a_batch_stride + a_strides[1] * i + a_strides[2] * (pj + k)
             a_shared[pi, pj] = a_storage[a_pos]
-        if pj < BLOCK_DIM and pi + k < BLOCK_DIM:
-            b_pos = batch * b_batch_stride + b_shape[1] * (pi + k) + b_shape[2] * pj
+        if j < BLOCK_DIM and pi + k < BLOCK_DIM:
+            b_pos = batch * b_batch_stride + b_strides[1] * (pi + k) + b_strides[2] * j
             b_shared[pi, pj] = b_storage[b_pos]
 
         for pk in range(min(BLOCK_DIM, out_size - k)):
             total += a_shared[pi][pk] * b_shared[pk][pj]
-    if pi == 0 and pj == 0:
+    if i < out_size and j < out_size:
+        out_pos = batch * out_strides[0] + i * out_strides[1] + j * out_strides[2]
         out[out_pos] = total
 
 
