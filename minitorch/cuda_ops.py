@@ -408,7 +408,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
         total = 0
         for k in range(size):
             total += a_shared[i, k] * b_shared[k, j]
-        out[i, j] = total
+        out[i * size + j] = total
 
 
 jit_mm_practice = jit(_mm_practice)
