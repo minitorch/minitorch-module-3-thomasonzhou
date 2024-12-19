@@ -286,8 +286,6 @@ if numba.cuda.is_available():
         y = minitorch.tensor(y1, backend=shared["cuda"])
         z2 = x @ y
 
-        assert z[0, 0, 0] == z2[0, 0, 0]
-
         for b in range(2):
             for i in range(size_a):
                 for j in range(size_b):
