@@ -224,8 +224,11 @@ class Permute(Function):
         reverse_order_map = {pos: i for i, pos in enumerate(unpacked)}
         prev_order = [reverse_order_map[i] for i in range(len(reverse_order_map))]
 
+        original_order_data = grad_output._tensor.permute(*prev_order)
         return minitorch.Tensor.make(
-            *grad_output._tensor.permute(*prev_order).tuple(),
+            original_order_data,
+            original_order_data.shape,
+            original_order_data.strides,
             backend=grad_output.backend,
         ), 0
 
