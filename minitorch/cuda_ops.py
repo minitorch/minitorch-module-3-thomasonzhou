@@ -326,7 +326,10 @@ def tensor_reduce(
         pos = cuda.threadIdx.x
 
         if pos < out_size:
-            cache[pos] = a_storage[pos]
+            if pos == 0:
+                cache[pos] = fn(cache[pos], a_storage[pos])
+            else:
+                cache[pos] = a_storage[pos]
         else:
             cache[pos] = 0
         cuda.syncthreads()
