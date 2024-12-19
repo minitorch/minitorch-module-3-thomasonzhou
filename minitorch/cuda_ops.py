@@ -499,9 +499,10 @@ def _tensor_matrix_multiply(
 
         cuda.syncthreads()
 
-        for pk in range(min(BLOCK_DIM, K - k)):
-            total += a_shared[pi, pk] * b_shared[pk, pj]
-    if i < out_shape[1] and j < out_shape[2]:
+        for pk in range(BLOCK_DIM):
+            if k + pk < K:
+                total += a_shared[pi, pk] * b_shared[pk, pj]
+    if i < I and j < J:
         out_pos = batch * out_strides[0] + i * out_strides[1] + j * out_strides[2]
         out[out_pos] = total
 
