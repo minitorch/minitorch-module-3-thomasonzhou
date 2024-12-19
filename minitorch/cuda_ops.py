@@ -326,6 +326,7 @@ def tensor_reduce(
         pos = cuda.threadIdx.x
 
         to_index(pos, out_shape, out_index)
+        out_location = index_to_position(out_index, out_strides)
 
         if pos < a_shape[reduce_dim]:
             out_index[reduce_dim] = pos
@@ -342,7 +343,7 @@ def tensor_reduce(
             cuda.syncthreads()
 
         if pos == 0:
-            out[out_pos] = cache[0]
+            out[out_location] = cache[0]
 
     return jit(_reduce)  # type: ignore
 
