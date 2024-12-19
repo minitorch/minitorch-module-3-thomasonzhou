@@ -226,7 +226,7 @@ class Permute(Function):
 
         original_order_data = grad_output._tensor.permute(*prev_order)
         return minitorch.Tensor.make(
-            original_order_data,
+            original_order_data._storage,
             original_order_data.shape,
             original_order_data.strides,
             backend=grad_output.backend,
