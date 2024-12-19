@@ -327,7 +327,7 @@ def tensor_reduce(
         out_pos = cuda.blockIdx.x
         pos = cuda.threadIdx.x
 
-        to_index(out_pos, out_shape, out_index)  # convert a location into indices
+        to_index(out_pos, out_shape, out_index)
         out_location = index_to_position(
             out_index, out_strides
         )  # writing location: this is shared across all threads
