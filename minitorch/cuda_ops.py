@@ -325,13 +325,14 @@ def tensor_reduce(
         out_pos = cuda.blockIdx.x
         pos = cuda.threadIdx.x
 
+        start_val = out[0]
         if pos < out_size:
             if pos == 0:
                 cache[pos] = fn(cache[pos], a_storage[pos])
             else:
                 cache[pos] = a_storage[pos]
         else:
-            cache[pos] = 0
+            cache[pos] = start_val
         cuda.syncthreads()
         to_index(pos, out_shape, out_index)
 
