@@ -396,8 +396,8 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
     j = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
 
-    local_i = cuda.threadIdx.x
-    local_j = cuda.threadIdx.y
+    local_i = int(cuda.threadIdx.x)
+    local_j = int(cuda.threadIdx.y)
 
     total = 0
     for k in range(size):
