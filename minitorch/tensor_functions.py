@@ -213,10 +213,7 @@ class Permute(Function):
     def forward(ctx: Context, a: Tensor, order: Tensor) -> Tensor:
         unpacked = [int(n) for n in order._tensor._storage]
         ctx.save_for_backward(unpacked)
-        new_data = a._tensor.permute(*unpacked)
-        return minitorch.Tensor.make(
-            a._tensor._storage, new_data.shape, new_data.strides, backend=a.backend
-        )
+        return a._new(a._tensor.permute(*unpacked))
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
@@ -224,13 +221,7 @@ class Permute(Function):
         reverse_order_map = {pos: i for i, pos in enumerate(unpacked)}
         prev_order = [reverse_order_map[i] for i in range(len(reverse_order_map))]
 
-        original_order_data = grad_output._tensor.permute(*prev_order)
-        return minitorch.Tensor.make(
-            original_order_data._storage,
-            original_order_data.shape,
-            original_order_data.strides,
-            backend=grad_output.backend,
-        ), 0
+        return grad_output._new(grad_output._tensor.permute(*prev_order)), 0
 
 
 class View(Function):
