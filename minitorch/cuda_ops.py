@@ -407,7 +407,7 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     if i < size and j < size:
         total = 0
         for k in range(size):
-            total += a_shared[i, k] * b_shared[k, j]
+            total += a_shared[j, k] * b_shared[k, i]
         out[j * size + i] = total
 
 
