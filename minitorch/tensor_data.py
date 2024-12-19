@@ -93,9 +93,11 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
 
     res = []
     for s1, s2 in zip(smaller, larger):
-        if s1 == 1 or s2 == 1:
-            res.append(max(s1, s2))
-        elif s1 == s2:
+        if s1 == s2:
+            res.append(s1)
+        elif s1 == 1:
+            res.append(s2)
+        elif s2 == 1:
             res.append(s1)
         else:
             raise IndexingError(f"Cannot broadcast incompatible shapes {s1} and {s2}")
