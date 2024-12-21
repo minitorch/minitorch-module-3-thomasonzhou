@@ -4,7 +4,6 @@ import random
 from typing import Iterable, Optional, Sequence, Tuple, Union
 
 import numba
-import numba.cuda
 import numpy as np
 import numpy.typing as npt
 from numpy import array, float64
@@ -44,7 +43,10 @@ def index_to_position(index: Index, strides: Strides) -> int:
         Position in storage
 
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    pos = 0
+    for i, s in zip(index, strides):
+        pos += i * s
+    return pos
 
 
 def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
@@ -59,29 +61,10 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         out_index : return index corresponding to position.
 
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
-
-
-def broadcast_index(
-    big_index: Index, big_shape: Shape, shape: Shape, out_index: OutIndex
-) -> None:
-    """Convert a `big_index` into `big_shape` to a smaller `out_index`
-    into `shape` following broadcasting rules. In this case
-    it may be larger or with more dimensions than the `shape`
-    given. Additional dimensions may need to be mapped to 0 or
-    removed.
-
-    Args:
-        big_index : multidimensional index of bigger tensor
-        big_shape : tensor shape of bigger tensor
-        shape : tensor shape of smaller tensor
-        out_index : multidimensional index of smaller tensor
-
-    Returns:
-        None
-
-    """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    product = 1.0
+    for i in range(len(shape) - 1, -1, -1):
+        out_index[i] = int(ordinal % (shape[i] * product) // product)
+        product *= shape[i]
 
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
@@ -98,11 +81,53 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
         IndexingError : if cannot broadcast
 
     """
-    raise NotImplementedError("Need to include this file from past assignment.")
+    if len(shape1) < len(shape2):
+        smaller = shape1
+        larger = shape2
+    else:
+        smaller = shape2
+        larger = shape1
+
+    len_diff = len(larger) - len(smaller)
+    smaller = [1] * len_diff + list(smaller)
+
+    res = []
+    for s1, s2 in zip(smaller, larger):
+        if s1 == s2:
+            res.append(s1)
+        elif s1 == 1:
+            res.append(s2)
+        elif s2 == 1:
+            res.append(s1)
+        else:
+            raise IndexingError(f"Cannot broadcast incompatible shapes {s1} and {s2}")
+
+    return tuple(res)
+
+
+def broadcast_index(big_index: Index, big_shape: Shape, shape: Shape, out_index: OutIndex) -> None:
+    """Convert a `big_index` into `big_shape` to a smaller `out_index`
+    into `shape` following broadcasting rules. In this case
+    it may be larger or with more dimensions than the `shape`
+    given. Additional dimensions may need to be mapped to 0 or
+    removed.
+
+    Args:
+        big_index : multidimensional index of bigger tensor
+        big_shape : tensor shape of bigger tensor
+        shape : tensor shape of smaller tensor
+        out_index : multidimensional index of smaller tensor
+
+    Returns:
+        None
+
+    """
+    for i in range(len(shape)):
+        offset = len(big_shape) - len(shape) + i
+        out_index[i] = big_index[offset] if shape[i] != 1 else 0
 
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
-    """Return a contiguous stride for a shape"""
     layout = [1]
     offset = 1
     for s in reversed(shape):
@@ -146,7 +171,6 @@ class TensorData:
         assert len(self._storage) == self.size
 
     def to_cuda_(self) -> None:  # pragma: no cover
-        """Convert to cuda"""
         if not numba.cuda.is_cuda_array(self._storage):
             self._storage = numba.cuda.to_device(self._storage)
 
@@ -171,13 +195,8 @@ class TensorData:
     def index(self, index: Union[int, UserIndex]) -> int:
         if isinstance(index, int):
             aindex: Index = array([index])
-        else:  # if isinstance(index, tuple):
+        if isinstance(index, tuple):
             aindex = array(index)
-
-        # Pretend 0-dim shape is 1-dim shape of singleton
-        shape = self.shape
-        if len(shape) == 0 and len(aindex) != 0:
-            shape = (1,)
 
         # Check for errors
         if aindex.shape[0] != len(self.shape):
@@ -199,7 +218,6 @@ class TensorData:
             yield tuple(out_index)
 
     def sample(self) -> UserIndex:
-        """Get a random valid index"""
         return tuple((random.randint(0, s - 1) for s in self.shape))
 
     def get(self, key: UserIndex) -> float:
@@ -210,14 +228,13 @@ class TensorData:
         self._storage[self.index(key)] = val
 
     def tuple(self) -> Tuple[Storage, Shape, Strides]:
-        """Return core tensor data as a tuple."""
         return (self._storage, self._shape, self._strides)
 
     def permute(self, *order: int) -> TensorData:
         """Permute the dimensions of the tensor.
 
         Args:
-            *order: a permutation of the dimensions
+            order (list): a permutation of the dimensions
 
         Returns:
             New `TensorData` with the same storage and a new dimension order.
@@ -227,10 +244,13 @@ class TensorData:
             range(len(self.shape))
         ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
 
-        raise NotImplementedError("Need to include this file from past assignment.")
+        return TensorData(
+            storage=self._storage,
+            shape=tuple(self.shape[i] for i in order),
+            strides=tuple(self.strides[i] for i in order),
+        )
 
     def to_string(self) -> str:
-        """Convert to string"""
         s = ""
         for index in self.indices():
             l = ""
@@ -253,3 +273,6 @@ class TensorData:
             else:
                 s += " "
         return s
+
+    def __repr__(self):
+        return f"TensorData(shape={self.shape}, dims={self.dims}, size={self.size}, storage={self._storage})"

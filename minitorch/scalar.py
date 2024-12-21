@@ -5,7 +5,6 @@ from typing import Any, Iterable, Optional, Sequence, Tuple, Type, Union
 
 import numpy as np
 
-from dataclasses import field
 from .autodiff import Context, Variable, backpropagate, central_difference
 from .scalar_functions import (
     EQ,
@@ -29,8 +28,7 @@ class ScalarHistory:
     """`ScalarHistory` stores the history of `Function` operations that was
     used to construct the current Variable.
 
-    Attributes
-    ----------
+    Attributes:
         last_fn : The last Function that was called.
         ctx : The context for that Function.
         inputs : The inputs that were given when `last_fn.forward` was called.
@@ -48,7 +46,6 @@ class ScalarHistory:
 _var_count = 0
 
 
-@dataclass
 class Scalar:
     """A reimplementation of scalar values for autodifferentiation
     tracking. Scalar Variables behave as close as possible to standard
@@ -57,21 +54,34 @@ class Scalar:
     `ScalarFunction`.
     """
 
+    history: Optional[ScalarHistory]
+    derivative: Optional[float]
     data: float
-    history: Optional[ScalarHistory] = field(default_factory=ScalarHistory)
-    derivative: Optional[float] = None
-    name: str = field(default="")
-    unique_id: int = field(default=0)
+    unique_id: int
+    name: str
 
-    def __post_init__(self):
+    def __init__(
+        self,
+        v: float,
+        back: ScalarHistory | None = ScalarHistory(),
+        name: Optional[str] = None,
+    ):
         global _var_count
         _var_count += 1
-        object.__setattr__(self, "unique_id", _var_count)
-        object.__setattr__(self, "name", str(self.unique_id))
-        object.__setattr__(self, "data", float(self.data))
+        self.unique_id = _var_count
+        self.data = float(v)
+        self.history = back
+        self.derivative = None
+        if name is not None:
+            self.name = name
+        else:
+            self.name = str(self.unique_id)
 
     def __repr__(self) -> str:
-        return f"Scalar({self.data})"
+        return "Scalar(val: %f, id: %d)" % (self.data, self.unique_id)
+
+    def __hash__(self):
+        return self.unique_id
 
     def __mul__(self, b: ScalarLike) -> Scalar:
         return Mul.apply(self, b)
@@ -82,14 +92,44 @@ class Scalar:
     def __rtruediv__(self, b: ScalarLike) -> Scalar:
         return Mul.apply(b, Inv.apply(self))
 
+    def __add__(self, b: ScalarLike) -> Scalar:
+        return Add.apply(self, b)
+
     def __bool__(self) -> bool:
         return bool(self.data)
+
+    def __lt__(self, b: ScalarLike) -> Scalar:
+        return LT.apply(self, b)
+
+    def __gt__(self, b: ScalarLike) -> Scalar:
+        return LT.apply(b, self)
+
+    def __eq__(self, b: ScalarLike) -> Scalar:  # type: ignore[override]
+        return EQ.apply(self, b)
+
+    def __sub__(self, b: ScalarLike) -> Scalar:
+        return Add.apply(self, Neg.apply(b))
+
+    def __neg__(self) -> Scalar:
+        return Neg.apply(self)
 
     def __radd__(self, b: ScalarLike) -> Scalar:
         return self + b
 
     def __rmul__(self, b: ScalarLike) -> Scalar:
         return self * b
+
+    def log(self) -> Scalar:
+        return Log.apply(self)
+
+    def exp(self) -> Scalar:
+        return Exp.apply(self)
+
+    def sigmoid(self) -> Scalar:
+        return Sigmoid.apply(self)
+
+    def relu(self) -> Scalar:
+        return ReLU.apply(self)
 
     # Variable elements for backprop
 
@@ -98,14 +138,13 @@ class Scalar:
         Should only be called during autodifferentiation on leaf variables.
 
         Args:
-        ----
             x: value to be accumulated
 
         """
         assert self.is_leaf(), "Only leaf variables can have derivatives."
         if self.derivative is None:
-            self.__setattr__("derivative", 0.0)
-        self.__setattr__("derivative", self.derivative + x)
+            self.derivative = 0.0
+        self.derivative += x
 
     def is_leaf(self) -> bool:
         """True if this variable created by the user (no `last_fn`)"""
@@ -116,7 +155,6 @@ class Scalar:
 
     @property
     def parents(self) -> Iterable[Variable]:
-        """Get the variables used to create this one."""
         assert self.history is not None
         return self.history.inputs
 
@@ -126,13 +164,16 @@ class Scalar:
         assert h.last_fn is not None
         assert h.ctx is not None
 
-        raise NotImplementedError("Need to include this file from past assignment.")
+        for var, deriv in zip(h.inputs, h.last_fn._backward(h.ctx, d_output)):
+            if not var.is_constant():  # filter out constants, which have a derivative of zero
+                yield var, deriv
+            else:
+                assert var.derivative is None
 
     def backward(self, d_output: Optional[float] = None) -> None:
         """Calls autodiff to fill in the derivatives for the history of this object.
 
         Args:
-        ----
             d_output (number, opt): starting derivative to backpropagate through the model
                                    (typically left out, and assumed to be 1.0).
 
@@ -140,8 +181,6 @@ class Scalar:
         if d_output is None:
             d_output = 1.0
         backpropagate(self, d_output)
-
-    raise NotImplementedError("Need to include this file from past assignment.")
 
 
 def derivative_check(f: Any, *scalars: Scalar) -> None:
@@ -162,13 +201,12 @@ Derivative check at arguments f(%s) and received derivative f'=%f for argument %
 but was expecting derivative f'=%f from central difference."""
     for i, x in enumerate(scalars):
         check = central_difference(f, *scalars, arg=i)
-        print(str([x.data for x in scalars]), x.derivative, i, check)
+        print(f, str([x.data for x in scalars]), x.derivative, i, check)
         assert x.derivative is not None
         np.testing.assert_allclose(
             x.derivative,
             check.data,
             1e-2,
             1e-2,
-            err_msg=err_msg
-            % (str([x.data for x in scalars]), x.derivative, i, check.data),
+            err_msg=err_msg % (str([x.data for x in scalars]), x.derivative, i, check.data),
         )
