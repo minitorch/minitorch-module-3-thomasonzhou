@@ -18,6 +18,7 @@ jobs:
               id: style
               uses: classroom-resources/autograding-command-grader@v1
               with:
+                  test-name: Style
                   timeout: 10
                   setup-command: pip3 install -qr requirements.txt; pip3 install
                       darglint==1.8.0; pip3 install flake8==5.0.4
@@ -28,12 +29,14 @@ jobs:
               id: task-3-1
               uses: classroom-resources/autograding-command-grader@v1
               with:
+                  test-name: Task 3.1
                   timeout: 10
                   setup-command: pip3 install -qr requirements.txt
             - name: Task 3.2
               id: task-3-2
               uses: classroom-resources/autograding-command-grader@v1
               with:
+                  test-name: Task 3.2
                   timeout: 10
                   setup-command: pip3 install -qr requirements.txt
             - name: Autograding Reporter
