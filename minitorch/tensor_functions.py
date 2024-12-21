@@ -168,7 +168,7 @@ class Sum(Function):
         return a.f.add_reduce(a, int(dim.item()))
 
     @staticmethod
-    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
         a_shape, dim = ctx.saved_tensors
         return grad_output, grad_output.zeros(grad_output.shape)
 

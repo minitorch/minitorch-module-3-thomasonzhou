@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import numpy as np
 from typing import TYPE_CHECKING, Any, Callable, Optional, Type
 
 from typing_extensions import Protocol
@@ -9,28 +9,29 @@ from .tensor_data import shape_broadcast, index_to_position, to_index, broadcast
 
 if TYPE_CHECKING:
     from .tensor import Tensor
-    from .tensor_data import Shape, Storage, Strides
+    from .tensor_data import Index, Shape, Storage, Strides
 
 
 class MapProto(Protocol):
-    def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor: ...
+    def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor:
+        pass
 
 
 class TensorOps:
     @staticmethod
-    def map(fn: Callable[[float], float]) -> MapProto:
+    def map(fn: Callable[[float], float]) -> MapProto:  # type: ignore[empty-body]
         pass
 
     @staticmethod
-    def cmap(fn: Callable[[float], float]) -> Callable[[Tensor, Tensor], Tensor]:
+    def cmap(fn: Callable[[float], float]) -> Callable[[Tensor, Tensor], Tensor]:  # type: ignore[empty-body]
         pass
 
     @staticmethod
-    def zip(fn: Callable[[float, float], float]) -> Callable[[Tensor, Tensor], Tensor]:
+    def zip(fn: Callable[[float, float], float]) -> Callable[[Tensor, Tensor], Tensor]:  # type: ignore[empty-body]
         pass
 
     @staticmethod
-    def reduce(
+    def reduce(  # type: ignore[empty-body]
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[[Tensor, int], Tensor]:
         pass
@@ -44,8 +45,7 @@ class TensorOps:
 
 class TensorBackend:
     def __init__(self, ops: Type[TensorOps]):
-        """
-        Dynamically construct a tensor backend based on a `tensor_ops` object
+        """Dynamically construct a tensor backend based on a `tensor_ops` object
         that implements map, zip, and reduce higher-order functions.
 
         Args:
@@ -56,7 +56,6 @@ class TensorBackend:
             A collection of tensor functions
 
         """
-
         # Maps
         self.neg_map = ops.map(operators.neg)
         self.sigmoid_map = ops.map(operators.sigmoid)
@@ -87,8 +86,7 @@ class TensorBackend:
 class SimpleOps(TensorOps):
     @staticmethod
     def map(fn: Callable[[float], float]) -> MapProto:
-        """
-        Higher-order tensor map function ::
+        """Higher-order tensor map function ::
 
           fn_map = map(fn)
           fn_map(a, out)
@@ -114,8 +112,8 @@ class SimpleOps(TensorOps):
 
         Returns:
             new tensor data
-        """
 
+        """
         f = tensor_map(fn)
 
         def ret(a: Tensor, out: Optional[Tensor] = None) -> Tensor:
@@ -128,8 +126,7 @@ class SimpleOps(TensorOps):
 
     @staticmethod
     def zip(fn: Callable[[float, float], float]) -> Callable[["Tensor", "Tensor"], "Tensor"]:
-        """
-        Higher-order tensor zip function ::
+        """Higher-order tensor zip function ::
 
           fn_zip = zip(fn)
           out = fn_zip(a, b)
@@ -154,8 +151,8 @@ class SimpleOps(TensorOps):
 
         Returns:
             :class:`TensorData` : new tensor data
-        """
 
+        """
         f = tensor_zip(fn)
 
         def ret(a: "Tensor", b: "Tensor") -> "Tensor":
@@ -173,8 +170,7 @@ class SimpleOps(TensorOps):
     def reduce(
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[["Tensor", int], "Tensor"]:
-        """
-        Higher-order tensor reduce function. ::
+        """Higher-order tensor reduce function. ::
 
           fn_reduce = reduce(fn)
           out = fn_reduce(a, dim)
@@ -194,6 +190,7 @@ class SimpleOps(TensorOps):
 
         Returns:
             :class:`TensorData` : new tensor
+
         """
         f = tensor_reduce(fn)
 
@@ -221,8 +218,7 @@ class SimpleOps(TensorOps):
 
 
 def tensor_map(fn: Callable[[float], float]) -> Any:
-    """
-    Low-level implementation of tensor map between
+    """Low-level implementation of tensor map between
     tensors with *possibly different strides*.
 
     Simple version:
@@ -248,6 +244,7 @@ def tensor_map(fn: Callable[[float], float]) -> Any:
 
     Returns:
         None : Fills in `out`
+
     """
 
     def _map(
@@ -258,8 +255,8 @@ def tensor_map(fn: Callable[[float], float]) -> Any:
         in_shape: Shape,
         in_strides: Strides,
     ) -> None:
-        out_idx = [0] * len(out_shape)
-        in_idx = [0] * len(in_shape)
+        out_idx: Index = np.empty_like(out_shape, np.int32)
+        in_idx: Index = np.empty_like(in_shape, np.int32)
 
         for i in range(len(out)):
             to_index(i, out_shape, out_idx)
@@ -274,8 +271,7 @@ def tensor_map(fn: Callable[[float], float]) -> Any:
 
 
 def tensor_zip(fn: Callable[[float, float], float]) -> Any:
-    """
-    Low-level implementation of tensor zip between
+    """Low-level implementation of tensor zip between
     tensors with *possibly different strides*.
 
     Simple version:
@@ -304,6 +300,7 @@ def tensor_zip(fn: Callable[[float, float], float]) -> Any:
 
     Returns:
         None : Fills in `out`
+
     """
 
     def _zip(
@@ -317,9 +314,9 @@ def tensor_zip(fn: Callable[[float, float], float]) -> Any:
         b_shape: Shape,
         b_strides: Strides,
     ) -> None:
-        out_idx = [0] * len(out_shape)
-        a_idx = [0] * len(a_shape)
-        b_idx = [0] * len(b_shape)
+        out_idx: Index = np.empty_like(out_shape, np.int32)
+        a_idx: Index = np.empty_like(a_shape, np.int32)
+        b_idx: Index = np.empty_like(b_shape, np.int32)
 
         for i in range(len(out)):
             to_index(i, out_shape, out_idx)
@@ -336,8 +333,7 @@ def tensor_zip(fn: Callable[[float, float], float]) -> Any:
 
 
 def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
-    """
-    Low-level implementation of tensor reduce.
+    """Low-level implementation of tensor reduce.
 
     * `out_shape` will be the same as `a_shape`
        except with `reduce_dim` turned to size `1`
@@ -354,6 +350,7 @@ def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
 
     Returns:
         None : Fills in `out`
+
     """
 
     def _reduce(
@@ -365,8 +362,8 @@ def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        a_idx = [0] * len(a_shape)
-        out_idx = [0] * len(out_shape)
+        a_idx: Index = np.empty_like(a_shape, np.int32)
+        out_idx: Index = np.empty_like(out_shape, np.int32)
 
         for i in range(len(a_storage)):
             to_index(i, a_shape, a_idx)

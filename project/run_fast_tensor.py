@@ -33,6 +33,7 @@ class Network(minitorch.Module):
         x = self.layer2(x).relu()
         return self.layer3(x).sigmoid()
 
+
 class Linear(minitorch.Module):
     def __init__(self, in_size, out_size, backend):
         super().__init__()

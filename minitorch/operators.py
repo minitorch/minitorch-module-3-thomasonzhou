@@ -1,7 +1,8 @@
 """Collection of the core mathematical operators used throughout the code base."""
 
 import math
-from typing import Callable
+from typing import Callable, Sequence
+
 
 # ## Task 0.1
 
@@ -104,7 +105,7 @@ def inv(x: float) -> float:
 
 def sigmoid(x: float) -> float:
     """Compute the sigmoid of x."""
-    return 1.0/(1.0 + math.exp(-x))
+    return 1.0 / (1.0 + math.exp(-x))
 
 
 def log_back(x: float, deriv: float) -> float:
@@ -114,7 +115,7 @@ def log_back(x: float, deriv: float) -> float:
 
 def inv_back(x: float, deriv: float) -> float:
     """Compute the derivative of inv times a value."""
-    return - deriv / (x ** 2)
+    return -deriv / (x**2)
 
 
 def relu_back(x: float, deriv: float) -> float:
@@ -139,17 +140,17 @@ def relu_back(x: float, deriv: float) -> float:
 # - addLists : add two lists together
 # - sum: sum lists
 # - prod: take the product of lists
-def map(f: Callable[float, float], l: list) -> list:
+def map(f: Callable[[float], float], l: list[float]) -> list[float]:
     """Apply a function f to each element of list l."""
     return [f(val) for val in l]
 
 
-def zipWith(f: Callable[[float, float], float], l1: list, l2: list) -> list:
+def zipWith(f: Callable[[float, float], float], l1: list[float], l2: list[float]) -> list[float]:
     """Apply a function f to combine lists l1 and l2."""
     return [f(val1, val2) for val1, val2 in zip(l1, l2)]
 
 
-def reduce(f: Callable[[float, float], float], l: list) -> float:
+def reduce(f: Callable[[float, float], float], l: Sequence[float]) -> float:
     """Reduce a list l to one value using repeated calls to f."""
     match len(l):
         case 0:
@@ -163,21 +164,21 @@ def reduce(f: Callable[[float, float], float], l: list) -> float:
             return curr
 
 
-def negList(l: list) -> list:
+def negList(l: list[float]) -> list[float]:
     """Negate each element of list l."""
     return map(neg, l)
 
 
-def addLists(l1: list, l2: list) -> list:
+def addLists(l1: list[float], l2: list[float]) -> list[float]:
     """Compute element-wise sum of lists l1 and l2."""
     return zipWith(add, l1, l2)
 
 
-def sum(l: list) -> list:
+def sum(l: list[float]) -> float:
     """Compute the sum of list l."""
     return reduce(add, l)
 
 
-def prod(l: list) -> list:
+def prod(l: Sequence[float]) -> float:
     """Compute the product of list l."""
     return reduce(mul, l)
