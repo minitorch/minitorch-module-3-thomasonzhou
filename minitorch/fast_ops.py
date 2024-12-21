@@ -183,9 +183,9 @@ def tensor_map(
             for i in prange(len(out)):
                 out[i] = fn(in_storage[i])
         else:
-            out_idx: Index = np.empty_like(out_shape, np.int64)
-            in_idx: Index = np.empty_like(in_shape, np.int64)
             for i in prange(len(out)):
+                out_idx: Index = np.empty_like(out_shape, np.int64)
+                in_idx: Index = np.empty_like(in_shape, np.int64)
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, in_shape, in_idx)
 
@@ -234,10 +234,10 @@ def tensor_zip(
             for i in prange(len(out)):
                 out[i] = fn(a_storage[i], b_storage[i])
         else:
-            out_idx: Index = np.empty_like(out_shape, np.int64)
-            a_idx: Index = np.empty_like(a_shape, np.int64)
-            b_idx: Index = np.empty_like(b_shape, np.int64)
             for i in prange(len(out)):
+                out_idx: Index = np.empty_like(out_shape, np.int64)
+                a_idx: Index = np.empty_like(a_shape, np.int64)
+                b_idx: Index = np.empty_like(b_shape, np.int64)
                 to_index(i, out_shape, out_idx)
                 broadcast_index(out_idx, out_shape, a_shape, a_idx)
                 broadcast_index(out_idx, out_shape, b_shape, b_idx)
@@ -281,16 +281,18 @@ def tensor_reduce(
         a_strides: Strides,
         reduce_dim: int,
     ) -> None:
-        a_idx: Index = np.empty_like(a_shape, np.int64)
-        out_idx: Index = np.empty_like(out_shape, np.int64)
-        for i in prange(len(a_storage)):
-            to_index(i, a_shape, a_idx)
-            broadcast_index(a_idx, a_shape, out_shape, out_idx)
+        for i in prange(len(out)):
+            out_idx: Index = np.empty_like(out_shape, np.int32)
+            to_index(i, out_shape, out_idx)
 
-            a_pos = index_to_position(a_idx, a_strides)
             out_pos = index_to_position(out_idx, out_strides)
 
-            out[out_pos] = fn(out[out_pos], a_storage[a_pos])
+            a_start_offset = index_to_position(out_idx, a_strides)
+            total = out[out_pos]
+            for j in range(a_shape[reduce_dim]):
+                total = fn(total, a_storage[a_start_offset + j * a_strides[reduce_dim]])
+
+            out[out_pos] = total
 
     return njit(_reduce, parallel=True)  # type: ignore
 
